@@ -3,14 +3,15 @@ package main
 import "fmt"
 
 type OperationsClient struct {
-	httpClient HttpClient
+	HttpClient  HttpClient
+	OperationId string
 }
 
 func (o *OperationsClient) uploadApp(appName, fileName string) {
 	request := HttpRequest{
 		Method: "POST",
-		Url:    o.httpClient.getBaseUrl() + "upload/" + appName,
-		Token:  o.httpClient.Token,
+		Url:    o.HttpClient.getBaseUrl() + "upload/" + appName,
+		Token:  o.HttpClient.Token,
 		Body:   createRequestBodyWithFile(fileName),
 	}
 
@@ -20,16 +21,19 @@ func (o *OperationsClient) uploadApp(appName, fileName string) {
 		return
 	}
 
+	operationId := resp.Header["Location"][0]
+	o.OperationId = operationId
+
 	if resp.StatusCode != 200 {
 		fmt.Println("Server error")
 	}
 }
 
-func (o *OperationsClient) continueAppUpload(appName string) {
+func (o *OperationsClient) continueAppUpload(operationId string) {
 	request := HttpRequest{
 		Method: "PUT",
-		Url:    o.httpClient.getBaseUrl() + "upload/" + appName,
-		Token:  o.httpClient.Token,
+		Url:    o.HttpClient.getBaseUrl() + "resume/" + operationId,
+		Token:  o.HttpClient.Token,
 	}
 
 	resp, err := httpCall(request)

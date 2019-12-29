@@ -8,8 +8,8 @@ import (
 )
 
 type OperationMonitor struct {
-	AppName string
-	Client  *HttpClient
+	OperationId string
+	Client      *HttpClient
 }
 
 func (monitor *OperationMonitor) monitorOperation() {
@@ -17,7 +17,7 @@ func (monitor *OperationMonitor) monitorOperation() {
 	for !hasError {
 		request := HttpRequest{
 			Method: "GET",
-			Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.AppName,
+			Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.OperationId,
 			Token:  monitor.Client.Token,
 		}
 
@@ -62,7 +62,7 @@ func (monitor *OperationMonitor) monitorOperation() {
 			return
 		case 300:
 			fmt.Printf("Operation is in validation phase\n" +
-				"Use \"cf bg-upload %s --continue\" to switch to new app\n", monitor.AppName)
+				"Use \"cf bg-upload %s --continue\" to switch to new app\n", monitor.OperationId)
 			return
 		case 500:
 			fmt.Println("Server error: " + messages[0])
