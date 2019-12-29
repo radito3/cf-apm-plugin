@@ -1,4 +1,4 @@
-package bgUploaderPlugin
+package main
 
 import (
 	"bufio"
@@ -12,34 +12,26 @@ import (
 )
 
 type HttpClient struct {
-	api     string
-	token   string
+	Api   string
+	Token string
 }
 
 const AppUrl string = "blue-green-uploader"
 
-func createRequestBodyWithFile(fileName string) (res io.Reader) {
+func createRequestBodyWithFile(fileName string) io.Reader {
 	f, err := os.Open(fileName)
 	if err != nil{
 		fmt.Println(err)
 		return nil
 	}
 
-	defer func() {
-		e := f.Close()
-		if e != nil {
-			fmt.Println(e)
-			res = nil
-		}
-	}()
-
 	return bufio.NewReader(f)
 }
 
 func (c *HttpClient) getBaseUrl() string {
-	domain := strings.Join(strings.Split(c.api, ".")[2:], "")
+	domain := strings.Join(strings.Split(c.Api, ".")[2:], ".")
 
-	return fmt.Sprintf("https://%s.cfapps.%s/api/v1/", AppUrl, domain)
+	return fmt.Sprintf("https://%s.cfapps.%s/Api/v1/", AppUrl, domain)
 }
 
 type HttpRequest struct {
@@ -57,7 +49,7 @@ func httpCall(request HttpRequest) (*http.Response, error) {
 
 	req.Header.Set("Authorization", request.Token)
 
-	client := &http.Client{Timeout: 5 * time.Minute}
+	client := http.Client{Timeout: 5 * time.Minute}
 
 	return client.Do(req)
 }

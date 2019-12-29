@@ -1,4 +1,4 @@
-package bgUploaderPlugin
+package main
 
 import "fmt"
 
@@ -9,8 +9,8 @@ type OperationsClient struct {
 func (o *OperationsClient) uploadApp(appName, fileName string) {
 	request := HttpRequest{
 		Method: "POST",
-		Url:    o.httpClient.getBaseUrl() + "/upload/" + appName,
-		Token:  o.httpClient.token,
+		Url:    o.httpClient.getBaseUrl() + "upload/" + appName,
+		Token:  o.httpClient.Token,
 		Body:   createRequestBodyWithFile(fileName),
 	}
 
@@ -28,8 +28,8 @@ func (o *OperationsClient) uploadApp(appName, fileName string) {
 func (o *OperationsClient) continueAppUpload(appName string) {
 	request := HttpRequest{
 		Method: "PUT",
-		Url:    o.httpClient.getBaseUrl() + "/upload/" + appName,
-		Token:  o.httpClient.token,
+		Url:    o.httpClient.getBaseUrl() + "upload/" + appName,
+		Token:  o.httpClient.Token,
 	}
 
 	resp, err := httpCall(request)

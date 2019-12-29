@@ -1,4 +1,4 @@
-package bgUploaderPlugin
+package main
 
 import (
 	"encoding/json"
@@ -17,8 +17,8 @@ func (monitor *OperationMonitor) monitorOperation() {
 	for !hasError {
 		request := HttpRequest{
 			Method: "GET",
-			Url:    monitor.Client.getBaseUrl() + "/messages/" + monitor.AppName,
-			Token:  monitor.Client.token,
+			Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.AppName,
+			Token:  monitor.Client.Token,
 		}
 
 		response, err := httpCall(request)

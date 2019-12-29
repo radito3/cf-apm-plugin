@@ -1,4 +1,4 @@
-package bgUploaderPlugin
+package main
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
@@ -27,7 +27,9 @@ func (c *BlueGreenUploader) Run(cliConnection plugin.CliConnection, args []strin
 		opsClient.uploadApp(args[1], args[2])
 	}
 
-	OperationMonitor{args[1], httpClient}.monitorOperation()
+	monitor := OperationMonitor{args[1], httpClient}
+
+	monitor.monitorOperation()
 }
 
 func (c *BlueGreenUploader) GetMetadata() plugin.PluginMetadata {
