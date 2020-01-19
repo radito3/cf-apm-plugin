@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"code.cloudfoundry.org/cli/plugin"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -18,20 +19,59 @@ type HttpClient struct {
 
 const AppUrl string = "blue-green-uploader"
 
-func createRequestBodyWithFile(fileName string) io.Reader {
-	f, err := os.Open(fileName)
+func createRequestBodyWithFile(fileName string) (io.Reader, map[string]string) {
+	file, err := os.Open(fileName)
 	if err != nil{
 		fmt.Println(err)
-		return nil
+		return nil, nil
 	}
 
-	return bufio.NewReader(f)
+	defer func() {
+		err1 := file.Close()
+		if err1 != nil {
+			fmt.Println(err1)
+		}
+	}()
+
+	var requestBody bytes.Buffer
+
+	multiPartWriter := multipart.NewWriter(&requestBody)
+
+	fileWriter, err := multiPartWriter.CreateFormFile("file", fileName)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
+
+	_, err = io.Copy(fileWriter, file)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
+
+	info, err := file.Stat()
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
+
+	err2 := multiPartWriter.Close()
+	if err2 != nil {
+		fmt.Println(err2)
+		return nil, nil
+	}
+
+	params := make(map[string]string, 2)
+	params["Content-Length"] = string(info.Size())
+	params["Content-Type"] = multiPartWriter.FormDataContentType()
+
+	return &requestBody, params
 }
 
 func (c *HttpClient) getBaseUrl() string {
 	domain := strings.Join(strings.Split(c.Api, ".")[2:], ".")
 
-	return fmt.Sprintf("https://%s.cfapps.%s/Api/v1/", AppUrl, domain)
+	return fmt.Sprintf("https://%s.cfapps.%s/api/v1/", AppUrl, domain)
 }
 
 type HttpRequest struct {
@@ -39,6 +79,7 @@ type HttpRequest struct {
 	Url    string
 	Token  string
 	Body   io.Reader
+	Params map[string]string
 }
 
 func httpCall(request HttpRequest) (*http.Response, error) {
@@ -48,6 +89,11 @@ func httpCall(request HttpRequest) (*http.Response, error) {
 	}
 
 	req.Header.Set("Authorization", request.Token)
+	if request.Params != nil {
+		for key, val := range request.Params {
+			req.Header.Set(key, val)
+		}
+	}
 
 	client := http.Client{Timeout: 5 * time.Minute}
 

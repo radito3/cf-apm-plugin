@@ -13,48 +13,17 @@ type OperationMonitor struct {
 }
 
 func (monitor *OperationMonitor) monitorOperation() {
-	var hasError = false
-	for !hasError {
-		request := HttpRequest{
-			Method: "GET",
-			Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.OperationId,
-			Token:  monitor.Client.Token,
-		}
-
-		response, err := httpCall(request)
+	for {
+		statusCode, messages, err := monitor.pollForMessages()
 		if err != nil {
 			fmt.Println(err)
-			return
+			break
 		}
 
-		defer func() {
-			e := response.Body.Close()
-			if e != nil {
-				fmt.Println(e)
-				hasError = true
-			}
-		}()
-
-		bytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		var messages []string
-
-		err2 := json.Unmarshal(bytes, &messages)
-		if err2 != nil {
-			fmt.Println(err2)
-			return
-		}
-
-		switch response.StatusCode {
+		switch statusCode {
 		case 102:
-			if len(messages) > 0 {
-				for msg := range messages {
-					fmt.Println(msg)
-				}
+			for _, msg := range messages {
+				fmt.Println(msg)
 			}
 			time.Sleep(2 * time.Second)
 		case 201:
@@ -64,12 +33,47 @@ func (monitor *OperationMonitor) monitorOperation() {
 			fmt.Printf("Operation is in validation phase\n" +
 				"Use \"cf bg-upload %s --continue\" to switch to new app\n", monitor.OperationId)
 			return
-		case 500:
-			fmt.Println("Server error: " + messages[0])
-			return
 		default:
 			fmt.Println("Unknown error")
 			return
 		}
 	}
+}
+
+func (monitor *OperationMonitor) pollForMessages() (sc int, msgs []string, err error) {
+	request := HttpRequest{
+		Method: "GET",
+		Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.OperationId,
+		Token:  monitor.Client.Token,
+	}
+	sc = -1
+
+	response, err1 := httpCall(request)
+	if err1 != nil {
+		err = err1
+		return
+	}
+
+	defer func() {
+		e := response.Body.Close()
+		if e != nil {
+			err = e
+		}
+	}()
+
+	bytes, err1 := ioutil.ReadAll(response.Body)
+	if err1 != nil {
+		err = err1
+		return
+	}
+
+	var messages []string
+
+	err2 := json.Unmarshal(bytes, &messages)
+	if err2 != nil {
+		err = err2
+		return
+	}
+
+	return response.StatusCode, messages, nil
 }
