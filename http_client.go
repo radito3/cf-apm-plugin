@@ -37,7 +37,7 @@ func createRequestBodyWithFile(fileName string) (io.Reader, map[string]string) {
 
 	multiPartWriter := multipart.NewWriter(&requestBody)
 
-	fileWriter, err := multiPartWriter.CreateFormFile("file", fileName)
+	fileWriter, err := multiPartWriter.CreateFormFile("file_field", fileName)
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil
@@ -75,11 +75,11 @@ func (c *HttpClient) getBaseUrl() string {
 }
 
 type HttpRequest struct {
-	Method string
-	Url    string
-	Token  string
-	Body   io.Reader
-	Params map[string]string
+	Method  string
+	Url     string
+	Token   string
+	Body    io.Reader
+	Params  map[string]string
 }
 
 func httpCall(request HttpRequest) (*http.Response, error) {

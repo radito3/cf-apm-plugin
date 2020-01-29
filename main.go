@@ -21,24 +21,9 @@ func (c *BlueGreenUploader) Run(cliConnection plugin.CliConnection, args []strin
 
 	opsClient := OperationsClient{HttpClient: *httpClient}
 	monitor := OperationMonitor{Client: httpClient}
-	var ok bool
 
-	if args[1] == "--continue" || args[1] == "-c" {
-		ok = opsClient.continueAppUpload(args[2])
-		if ok {
-			fmt.Println("Continuing operation...")
-		}
-		monitor.OperationId = args[2]
-	} else {
-		ok = opsClient.uploadApp(args[1], args[2])
-		if ok {
-			fmt.Println("Operation started...")
-		}
-		monitor.OperationId = opsClient.OperationId
-	}
-
-	if ok {
-		monitor.monitorOperation()
+	if ok := opsClient.uploadApp(args[1], args[2]); ok {
+		monitor.monitorOperation(opsClient.OperationId)
 	}
 }
 
@@ -60,11 +45,7 @@ func (c *BlueGreenUploader) GetMetadata() plugin.PluginMetadata {
 				Name:     "bg-upload",
 				HelpText: "Upload or update an application without downtime",
 				UsageDetails: plugin.Usage{
-					Usage: `Start an upload of an application
-	cf bg-upload APP_NAME FILE_PATH
-
-	Resume an upload
-	cf bg-deploy --continue OPERATION_ID`,
+					Usage: "cf bg-upload APP_NAME FILE_PATH",
 				},
 			},
 		},

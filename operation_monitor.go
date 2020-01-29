@@ -8,30 +8,25 @@ import (
 )
 
 type OperationMonitor struct {
-	OperationId string
 	Client      *HttpClient
 }
 
-func (monitor *OperationMonitor) monitorOperation() {
+func (monitor *OperationMonitor) monitorOperation(operationId string) {
 	for {
-		statusCode, messages, err := monitor.pollForMessages()
+		statusCode, messages, err := monitor.pollForMessages(operationId)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
 
 		switch statusCode {
-		case 102:
+		case 200:
 			for _, msg := range messages {
 				fmt.Println(msg)
 			}
-			time.Sleep(2 * time.Second)
+			time.Sleep(3 * time.Second)
 		case 201:
 			fmt.Println("Application updated")
-			return
-		case 300:
-			fmt.Printf("Operation is in validation phase\n" +
-				"Use \"cf bg-upload %s --continue\" to switch to new app\n", monitor.OperationId)
 			return
 		default:
 			fmt.Println("Unknown error")
@@ -40,10 +35,10 @@ func (monitor *OperationMonitor) monitorOperation() {
 	}
 }
 
-func (monitor *OperationMonitor) pollForMessages() (sc int, msgs []string, err error) {
+func (monitor *OperationMonitor) pollForMessages(operationId string) (sc int, msgs []string, err error) {
 	request := HttpRequest{
 		Method: "GET",
-		Url:    monitor.Client.getBaseUrl() + "messages/" + monitor.OperationId,
+		Url:    monitor.Client.getBaseUrl() + "messages/" + operationId,
 		Token:  monitor.Client.Token,
 	}
 	sc = -1

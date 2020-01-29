@@ -8,6 +8,8 @@ type OperationsClient struct {
 }
 
 func (o *OperationsClient) uploadApp(appName, fileName string) bool {
+	fmt.Println("Operation started...")
+
 	body, params := createRequestBodyWithFile(fileName)
 	request := HttpRequest{
 		Method: "POST",
@@ -30,25 +32,5 @@ func (o *OperationsClient) uploadApp(appName, fileName string) bool {
 
 	operationId := resp.Header["Location"][0]
 	o.OperationId = operationId
-	return true
-}
-
-func (o *OperationsClient) continueAppUpload(operationId string) bool {
-	request := HttpRequest{
-		Method: "PUT",
-		Url:    o.HttpClient.getBaseUrl() + "resume/" + operationId,
-		Token:  o.HttpClient.Token,
-	}
-
-	resp, err := httpCall(request)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-
-	if resp.StatusCode != 200 {
-		fmt.Println("Server error")
-		return false
-	}
 	return true
 }
